@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>FreteFácil - Sistema de Fretes</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+</head>
+
+<body>
+
+<div class="sistema">
+
+    <!-- ================= MENU ================= -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <div class="logo-icon">🚚</div>
+
+            <div>
+                <h1>FreteFácil</h1>
+                <p>Sistema de Fretes</p>
+            </div>
+        </div>
+
+        <nav class="menu">
+
+            <a href="#" class="menu-item ativo" data-tela="calcular">
+                🧮 <span>Calcular Frete</span>
+            </a>
+
+            <a href="#" class="menu-item" data-tela="historico">
+                📋 <span>Histórico</span>
+            </a>
+
+            <a href="#" class="menu-item" data-tela="orcamentos">
+                📄 <span>Orçamentos</span>
+            </a>
+
+            <a href="#" class="menu-item" data-tela="transportadoras">
+                🚛 <span>Transportadoras</span>
+            </a>
+
+            <a href="#" class="menu-item" data-tela="veiculos">
+                🚚 <span>Veículos</span>
+            </a>
+
+            <a href="#" class="menu-item" data-tela="entregas">
+                📍 <span>Entregas</span>
+            </a>
+
+            <a href="#" class="menu-item" data-tela="configuracoes">
+                ⚙️ <span>Configurações</span>
+            </a>
+
+        </nav>
+
+        <div class="usuario">
+            <strong>Administrador</strong>
+            <span>admin@fretefacil.com</span>
+        </div>
+
+    </aside>
+
+
+    <!-- ================= CONTEÚDO ================= -->
+
+    <main class="conteudo">
+
+        <header class="topo">
+
+            <span>🔔 3</span>
+
+            <span id="dataAtual"></span>
+
+            <strong>Administrador</strong>
+
+        </header>
+
+
+        <!-- =====================================================
+             TELA CALCULAR FRETE
+        ====================================================== -->
+
+        <section class="tela ativa" id="tela-calcular">
+
+            <div class="titulo">
+
+                <h2>Cálculo de Frete</h2>
+
+                <p>
+                    Informe os dados da carga para calcular o valor do transporte.
+                </p>
+
+            </div>
+
+
+            <div class="grid-principal">
+
+                <!-- FORMULÁRIO -->
+
+                <div class="card">
+
+                    <div class="card-header">
+                        🚚 Dados do Transporte
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="rota">
+
+                            <div class="campo">
+
+                                <label>Origem</label>
+
+                                <input
+                                    type="text"
+                                    id="origem"
+                                    value="São Paulo - SP"
+                                    placeholder="Ex.: São Paulo - SP"
+                                >
+
+                            </div>
+
+                            <div class="campo">
+
+                                <label>Destino</label>
+
+                                <input
+                                    type="text"
+                                    id="destino"
+                                    value="Belo Horizonte - MG"
+                                    placeholder="Ex.: Belo Horizonte - MG"
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-grid">
+
+                            <div class="campo">
+
+                                <label>Peso da carga (kg)</label>
+
+                                <input
+                                    type="number"
+                                    id="peso"
+                                    value="5000"
+                                    min="1"
+                                >
+
+                            </div>
+
+
+                            <div class="campo">
+
+                                <label>Volume (m³)</label>
+
+                                <input
+                                    type="number"
+                                    id="volume"
+                                    value="20"
+                                    min="0"
+                                    step="0.1"
+                                >
+
+                            </div>
+
+
+                            <div class="campo">
+
+                                <label>Valor da mercadoria (R$)</label>
+
+                                <input
+                                    type="number"
+                                    id="mercadoria"
+                                    value="50000"
+                                    min="0"
+                                    step="0.01"
+                                >
+
+                            </div>
+
+
+                            <div class="campo">
+
+                                <label>Tipo de veículo</label>
+
+                                <select id="veiculo">
+
+                                    <option value="3/4">
+                                        Caminhão 3/4
+                                    </option>
+
+                                    <option value="toco">
+                                        Caminhão Toco
+                                    </option>
+
+                                    <option value="truck">
+                                        Caminhão Truck
+                                    </option>
+
+                                    <option value="carreta">
+                                        Carreta
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="campo">
+
+                                <label>Tipo de entrega</label>
+
+                                <select id="urgencia">
+
+                                    <option value="normal">
+                                        Normal
+                                    </option>
+
+                                    <option value="urgente">
+                                        Urgente
+                                    </option>
+
+                                    <option value="expressa">
+                                        Expressa
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="campo">
+
+                                <label>Data da coleta</label>
+
+                                <input
+                                    type="date"
+                                    id="dataColeta"
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="opcoes">
+
+                            <strong>Serviços adicionais</strong>
+
+                            <div class="checks">
+
+                                <label>
+                                    <input type="checkbox" id="seguro">
+                                    Seguro de carga
+                                </label>
+
+                                <label>
+                                    <input type="checkbox" id="agendada">
+                                    Entrega agendada
+                                </label>
+
+                                <label>
+                                    <input type="checkbox" id="fragil">
+                                    Carga frágil
+                                </label>
+
+                            </div>
+
+                        </div>
+
+
+                        <button
+                            class="btn-calcular"
+                            id="btnCalcular"
+                        >
+                            🧮 CALCULAR FRETE
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- RESULTADO -->
+
+                <div>
+
+                    <div class="card">
+
+                        <div class="resultado-topo">
+
+                            <small>VALOR ESTIMADO</small>
+
+                            <strong id="total">
+                                R$ 0,00
+                            </strong>
+
+                        </div>
+
+
+                        <div class="resultado-body">
+
+                            <div class="linha">
+                                <span>Frete base</span>
+                                <strong id="freteBase">R$ 0,00</strong>
+                            </div>
+
+                            <div class="linha">
+                                <span>Adicional de distância</span>
+                                <strong id="distanciaValor">R$ 0,00</strong>
+                            </div>
+
+                            <div class="linha">
+                                <span>Combustível</span>
+                                <strong id="combustivel">R$ 0,00</strong>
+                            </div>
+
+                            <div class="linha">
+                                <span>Seguro</span>
+                                <strong id="seguroValor">R$ 0,00</strong>
+                            </div>
+
+                            <div class="linha">
+                                <span>Adicionais</span>
+                                <strong id="adicionais">R$ 0,00</strong>
+                            </div>
+
+                            <div class="linha total-linha">
+                                <span>TOTAL</span>
+                                <strong id="total2">R$ 0,00</strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- MAPA PEQUENO -->
+
+                    <div class="card rota-card">
+
+                        <div class="card-header mapa-header">
+
+                            <span>📍 Rota no mapa</span>
+
+                            <span id="statusMapa">
+                                Aguardando rota
+                            </span>
+
+                        </div>
+
+                        <div id="map"></div>
+
+                        <div class="mapa-creditos">
+
+                            ©
+                            <a
+                                href="https://www.openstreetmap.org/"
+                                target="_blank"
+                            >
+                                OpenStreetMap
+                            </a>
+                            contributors
+
+                        </div>
+
+                        <div class="rota-info">
+
+                            <div>
+                                <span>Distância</span>
+                                <strong id="distancia">--</strong>
+                            </div>
+
+                            <div>
+                                <span>Tempo estimado</span>
+                                <strong id="tempo">--</strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TRANSPORTADORAS -->
+
+            <div class="card transportadoras">
+
+                <div class="card-header">
+                    🚛 Transportadoras disponíveis
+                </div>
+
+                <div class="transportadora">
+
+                    <div class="transportadora-info">
+
+                        <div class="empresa-icon">🚚</div>
+
+                        <div>
+                            <strong>TransRápido Ltda.</strong>
+                            <span>Caminhão Truck • 2 dias</span>
+                        </div>
+
+                    </div>
+
+                    <strong class="preco" id="preco1">
+                        R$ 0,00
+                    </strong>
+
+                    <button onclick="selecionar('TransRápido Ltda.')">
+                        Selecionar
+                    </button>
+
+                </div>
+
+
+                <div class="transportadora">
+
+                    <div class="transportadora-info">
+
+                        <div class="empresa-icon">🚛</div>
+
+                        <div>
+                            <strong>Rodoviária Express</strong>
+                            <span>Carreta • 2 dias</span>
+                        </div>
+
+                    </div>
+
+                    <strong class="preco" id="preco2">
+                        R$ 0,00
+                    </strong>
+
+                    <button onclick="selecionar('Rodoviária Express')">
+                        Selecionar
+                    </button>
+
+                </div>
+
+
+                <div class="transportadora">
+
+                    <div class="transportadora-info">
+
+                        <div class="empresa-icon">🚚</div>
+
+                        <div>
+                            <strong>Mega Fretes</strong>
+                            <span>Caminhão Toco • 3 dias</span>
+                        </div>
+
+                    </div>
+
+                    <strong class="preco" id="preco3">
+                        R$ 0,00
+                    </strong>
+
+                    <button onclick="selecionar('Mega Fretes')">
+                        Selecionar
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             HISTÓRICO
+        ====================================================== -->
+
+        <section class="tela" id="tela-historico">
+
+            <div class="titulo">
+
+                <h2>Histórico de Fretes</h2>
+
+                <p>
+                    Consulte todas as cotações realizadas.
+                </p>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header historico-header">
+
+                    <span>📋 Cotações realizadas</span>
+
+                    <button
+                        class="btn-secundario"
+                        onclick="limparHistorico()"
+                    >
+                        Limpar histórico
+                    </button>
+
+                </div>
+
+
+                <div id="listaHistorico">
+
+                    <div class="vazio">
+                        Nenhuma cotação realizada ainda.
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             ORÇAMENTOS
+        ====================================================== -->
+
+        <section class="tela" id="tela-orcamentos">
+
+            <div class="titulo">
+
+                <h2>Orçamentos</h2>
+
+                <p>
+                    Gerencie os orçamentos criados no sistema.
+                </p>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+                    📄 Meus Orçamentos
+                </div>
+
+
+                <div id="listaOrcamentos">
+
+                    <div class="vazio">
+                        Nenhum orçamento criado.
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             TRANSPORTADORAS
+        ====================================================== -->
+
+        <section class="tela" id="tela-transportadoras">
+
+            <div class="titulo">
+
+                <h2>Transportadoras</h2>
+
+                <p>
+                    Cadastre e gerencie as transportadoras.
+                </p>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+                    🚛 Nova Transportadora
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="form-grid">
+
+                        <div class="campo">
+                            <label>Nome da empresa</label>
+                            <input
+                                type="text"
+                                id="nomeTransportadora"
+                                placeholder="Ex.: TransRápido Ltda."
+                            >
+                        </div>
+
+                        <div class="campo">
+                            <label>CNPJ</label>
+                            <input
+                                type="text"
+                                id="cnpjTransportadora"
+                                placeholder="00.000.000/0001-00"
+                            >
+                        </div>
+
+                        <div class="campo">
+                            <label>Telefone</label>
+                            <input
+                                type="text"
+                                id="telefoneTransportadora"
+                                placeholder="(11) 99999-9999"
+                            >
+                        </div>
+
+                        <div class="campo">
+                            <label>Cidade</label>
+                            <input
+                                type="text"
+                                id="cidadeTransportadora"
+                                placeholder="São Paulo - SP"
+                            >
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="btn-calcular"
+                        onclick="adicionarTransportadora()"
+                    >
+                        ➕ CADASTRAR TRANSPORTADORA
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="card lista-card">
+
+                <div class="card-header">
+                    Empresas cadastradas
+                </div>
+
+                <div id="listaTransportadoras"></div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             VEÍCULOS
+        ====================================================== -->
+
+        <section class="tela" id="tela-veiculos">
+
+            <div class="titulo">
+
+                <h2>Veículos</h2>
+
+                <p>
+                    Cadastre os veículos utilizados nas operações.
+                </p>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+                    🚚 Cadastrar veículo
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="form-grid">
+
+                        <div class="campo">
+
+                            <label>Modelo</label>
+
+                            <input
+                                type="text"
+                                id="modeloVeiculo"
+                                placeholder="Ex.: Mercedes-Benz Atego"
+                            >
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>Placa</label>
+
+                            <input
+                                type="text"
+                                id="placaVeiculo"
+                                placeholder="ABC-1234"
+                            >
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>Tipo</label>
+
+                            <select id="tipoVeiculo">
+
+                                <option>Caminhão 3/4</option>
+                                <option>Caminhão Toco</option>
+                                <option>Caminhão Truck</option>
+                                <option>Carreta</option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>Capacidade (kg)</label>
+
+                            <input
+                                type="number"
+                                id="capacidadeVeiculo"
+                                placeholder="5000"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="btn-calcular"
+                        onclick="adicionarVeiculo()"
+                    >
+                        ➕ CADASTRAR VEÍCULO
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="card lista-card">
+
+                <div class="card-header">
+                    Veículos cadastrados
+                </div>
+
+                <div id="listaVeiculos"></div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             ENTREGAS
+        ====================================================== -->
+
+        <section class="tela" id="tela-entregas">
+
+            <div class="titulo">
+
+                <h2>Entregas</h2>
+
+                <p>
+                    Acompanhe o status das entregas.
+                </p>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+                    📍 Nova entrega
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="form-grid">
+
+                        <div class="campo">
+
+                            <label>Origem</label>
+
+                            <input
+                                type="text"
+                                id="entregaOrigem"
+                                placeholder="São Paulo - SP"
+                            >
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>Destino</label>
+
+                            <input
+                                type="text"
+                                id="entregaDestino"
+                                placeholder="Belo Horizonte - MG"
+                            >
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>Motorista</label>
+
+                            <input
+                                type="text"
+                                id="motoristaEntrega"
+                                placeholder="Nome do motorista"
+                            >
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>Previsão de entrega</label>
+
+                            <input
+                                type="date"
+                                id="previsaoEntrega"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="btn-calcular"
+                        onclick="adicionarEntrega()"
+                    >
+                        📍 CADASTRAR ENTREGA
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="card lista-card">
+
+                <div class="card-header">
+                    Entregas em andamento
+                </div>
+
+                <div id="listaEntregas"></div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
+             CONFIGURAÇÕES
+        ====================================================== -->
+
+        <section class="tela" id="tela-configuracoes">
+
+            <div class="titulo">
+
+                <h2>Configurações</h2>
+
+                <p>
+                    Configure as informações do sistema.
+                </p>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+                    ⚙️ Configurações gerais
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="configuracao">
+
+                        <div>
+                            <strong>Nome do sistema</strong>
+                            <span>Nome exibido no sistema.</span>
+                        </div>
+
+                        <input
+                            type="text"
+                            id="nomeSistema"
+                            value="FreteFácil"
+                        >
+
+                    </div>
+
+
+                    <div class="configuracao">
+
+                        <div>
+                            <strong>Taxa de combustível</strong>
+                            <span>Percentual utilizado no cálculo.</span>
+                        </div>
+
+                        <input
+                            type="number"
+                            id="taxaCombustivel"
+                            value="12"
+                            min="0"
+                            max="100"
+                        >
+
+                    </div>
+
+
+                    <div class="configuracao">
+
+                        <div>
+                            <strong>Valor por km</strong>
+                            <span>Adicional aplicado por quilômetro.</span>
+                        </div>
+
+                        <input
+                            type="number"
+                            id="valorKm"
+                            value="1.25"
+                            min="0"
+                            step="0.01"
+                        >
+
+                    </div>
+
+
+                    <button
+                        class="btn-calcular"
+                        onclick="salvarConfiguracoes()"
+                    >
+                        💾 SALVAR CONFIGURAÇÕES
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="card aviso-config">
+
+                <div class="card-header">
+                    💡 Informações
+                </div>
+
+                <div class="card-body">
+
+                    <p>
+                        As configurações são salvas no navegador através do
+                        armazenamento local.
+                    </p>
+
+                    <p>
+                        Para apagar todos os dados salvos, utilize o botão abaixo.
+                    </p>
+
+                    <button
+                        class="btn-perigo"
+                        onclick="apagarDados()"
+                    >
+                        🗑️ APAGAR TODOS OS DADOS
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="script.js"></script>
+
+</body>
+</html>
