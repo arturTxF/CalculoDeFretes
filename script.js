@@ -28,6 +28,11 @@ let veiculos =
 let entregas =
     JSON.parse(localStorage.getItem("entregas")) || [];
 
+let clientes =
+    JSON.parse(localStorage.getItem("clientes")) || [];
+
+let clienteEmEdicao = null;
+
 
 /* =========================================================
    INICIALIZAÇÃO
@@ -46,6 +51,16 @@ document.addEventListener("DOMContentLoaded", function () {
     carregarListas();
 
     carregarConfiguracoes();
+
+    carregarConfiguracoesEmail();
+
+
+    document
+        .getElementById("clienteFrete")
+        .addEventListener(
+            "change",
+            mostrarEmailCliente
+        );
 
 });
 
@@ -160,6 +175,22 @@ function dinheiro(valor) {
             currency: "BRL"
         }
     );
+
+}
+
+
+/* =========================================================
+   TEXTO SEGURO
+========================================================= */
+
+function escapar(texto) {
+
+    return String(texto || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
 
 }
 
@@ -506,6 +537,10 @@ async function calcularFrete() {
             );
 
 
+        const cliente =
+            clienteSelecionado();
+
+
         /* SALVAR NO HISTÓRICO */
 
         const registro = {
@@ -519,6 +554,9 @@ async function calcularFrete() {
             distancia: distanciaKm,
 
             valor: valor,
+
+            clienteNome:
+                cliente ? cliente.nome : "",
 
             data:
                 new Date().toLocaleDateString(
@@ -547,7 +585,31 @@ async function calcularFrete() {
 
             destino: destinoTexto,
 
+            distancia: distanciaKm,
+
             valor: valor,
+
+            peso:
+                document.getElementById("peso").value,
+
+            veiculo:
+                document.getElementById("veiculo")
+                    .selectedOptions[0].text.trim(),
+
+            urgencia:
+                document.getElementById("urgencia")
+                    .selectedOptions[0].text.trim(),
+
+            clienteId:
+                cliente ? cliente.id : null,
+
+            clienteNome:
+                cliente ? cliente.nome : "",
+
+            clienteEmail:
+                cliente ? cliente.email : "",
+
+            emailEnviado: "Não enviado",
 
             data:
                 new Date().toLocaleDateString(
@@ -575,6 +637,29 @@ async function calcularFrete() {
 
         status.innerText =
             "Rota encontrada";
+
+
+        /* ENVIAR ORÇAMENTO AO CLIENTE */
+
+        if (
+            cliente &&
+            configuracoesEmail().automatico
+        ) {
+
+            status.innerText =
+                "Enviando orçamento por e-mail...";
+
+
+            await enviarEmailOrcamento(
+                orcamento,
+                false
+            );
+
+
+            status.innerText =
+                "Rota encontrada";
+
+        }
 
 
     } catch (erro) {
@@ -895,6 +980,984 @@ document
         "click",
         calcularFrete
     );
+
+
+/* =========================================================
+   CADASTRO DE CLIENTES
+   Autor: Pedro Ivanoff
+========================================================= */
+
+const CHAVE_CLIENTES = "clientes";
+
+const CAMPOS_CLIENTE = {
+    nome: "nomeCliente",
+    email: "emailClienteCadastro",
+    telefone: "telefoneCliente",
+    documento: "documentoCliente",
+    cidade: "cidadeCliente",
+    contato: "contatoCliente"
+};
+
+const TEXTO_BOTAO_CADASTRAR = "➕ CADASTRAR CLIENTE";
+const TEXTO_BOTAO_SALVAR = "💾 SALVAR ALTERAÇÕES";
+
+
+function campo(id) {
+
+    return document.getElementById(id);
+
+}
+
+
+function valorDoCampo(id) {
+
+    return campo(id).value.trim();
+
+}
+
+
+function emailValido(email) {
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(
+        String(email).trim()
+    );
+
+}
+
+
+function lerFormularioCliente() {
+
+    const cliente = {};
+
+    Object.entries(CAMPOS_CLIENTE).forEach(function ([propriedade, id]) {
+
+        cliente[propriedade] = valorDoCampo(id);
+
+    });
+
+    return cliente;
+
+}
+
+
+function preencherFormularioCliente(cliente) {
+
+    Object.entries(CAMPOS_CLIENTE).forEach(function ([propriedade, id]) {
+
+        campo(id).value = cliente[propriedade] || "";
+
+    });
+
+}
+
+
+function emailJaCadastrado(email, idAtual) {
+
+    return clientes.some(function (cliente) {
+
+        return (
+            cliente.email.toLowerCase() === email.toLowerCase() &&
+            cliente.id !== idAtual
+        );
+
+    });
+
+}
+
+
+/* Devolve o motivo da recusa, ou null quando os dados estão válidos. */
+function validarCliente(cliente) {
+
+    if (!cliente.nome) {
+
+        return "Informe o nome do cliente.";
+
+    }
+
+    if (!emailValido(cliente.email)) {
+
+        return "Informe um e-mail válido.\n\nO e-mail é usado para enviar o orçamento ao cliente.";
+
+    }
+
+    if (emailJaCadastrado(cliente.email, clienteEmEdicao)) {
+
+        return "Já existe um cliente cadastrado com este e-mail.";
+
+    }
+
+    return null;
+
+}
+
+
+function salvarCliente() {
+
+    const dados = lerFormularioCliente();
+
+    const erro = validarCliente(dados);
+
+    if (erro) {
+
+        alert(erro);
+        return;
+
+    }
+
+    const editando = Boolean(clienteEmEdicao);
+
+    if (editando) {
+
+        atualizarCliente(clienteEmEdicao, dados);
+
+    } else {
+
+        clientes.push(Object.assign({ id: Date.now() }, dados));
+
+    }
+
+    salvarClientes();
+
+    cancelarEdicaoCliente();
+
+    carregarClientes();
+
+    alert(
+        editando
+            ? "Cliente atualizado!"
+            : "Cliente cadastrado!"
+    );
+
+}
+
+
+function atualizarCliente(id, dados) {
+
+    const cliente = buscarCliente(id);
+
+    if (cliente) {
+
+        Object.assign(cliente, dados);
+
+    }
+
+}
+
+
+function buscarCliente(id) {
+
+    return clientes.find(
+        cliente => cliente.id === id
+    ) || null;
+
+}
+
+
+function salvarClientes() {
+
+    localStorage.setItem(
+        CHAVE_CLIENTES,
+        JSON.stringify(clientes)
+    );
+
+}
+
+
+function carregarClientes() {
+
+    const lista = campo("listaClientes");
+
+    lista.innerHTML = clientes.length
+        ? clientes.map(linhaDoCliente).join("")
+        : '<div class="vazio">Nenhum cliente cadastrado.</div>';
+
+    preencherSelectClientes();
+
+}
+
+
+function linhaDoCliente(cliente) {
+
+    return `
+        <div class="item-lista">
+
+            <div class="item-info">
+
+                <strong>
+                    👤 ${escapar(cliente.nome)}
+                </strong>
+
+                <span>
+                    ✉️ ${escapar(cliente.email)}
+                    • ${escapar(cliente.telefone) || "Telefone não informado"}
+                    • ${escapar(cliente.cidade) || "Cidade não informada"}
+                </span>
+
+            </div>
+
+            <div class="item-acoes">
+
+                <button
+                    class="btn-secundario"
+                    onclick="editarCliente(${cliente.id})"
+                >
+                    ✏️ Editar
+                </button>
+
+                <button
+                    class="btn-excluir"
+                    onclick="excluirCliente(${cliente.id})"
+                >
+                    🗑️ Excluir
+                </button>
+
+            </div>
+
+        </div>
+    `;
+
+}
+
+
+function editarCliente(id) {
+
+    const cliente = buscarCliente(id);
+
+    if (!cliente) {
+
+        return;
+
+    }
+
+    clienteEmEdicao = id;
+
+    preencherFormularioCliente(cliente);
+
+    campo("btnSalvarCliente").innerText = TEXTO_BOTAO_SALVAR;
+
+    campo("btnCancelarCliente").hidden = false;
+
+    campo(CAMPOS_CLIENTE.nome).focus();
+
+}
+
+
+function cancelarEdicaoCliente() {
+
+    clienteEmEdicao = null;
+
+    preencherFormularioCliente({});
+
+    campo("btnSalvarCliente").innerText = TEXTO_BOTAO_CADASTRAR;
+
+    campo("btnCancelarCliente").hidden = true;
+
+}
+
+
+function excluirCliente(id) {
+
+    if (!confirm("Deseja excluir este cliente?")) {
+
+        return;
+
+    }
+
+    clientes = clientes.filter(
+        cliente => cliente.id !== id
+    );
+
+    if (clienteEmEdicao === id) {
+
+        cancelarEdicaoCliente();
+
+    }
+
+    salvarClientes();
+
+    carregarClientes();
+
+}
+
+
+/* =========================================================
+   CLIENTE NA TELA DE CÁLCULO
+   Autor: Pedro Ivanoff
+========================================================= */
+
+function preencherSelectClientes() {
+
+    const select = campo("clienteFrete");
+
+    if (!select) {
+
+        return;
+
+    }
+
+    const selecionadoAntes = select.value;
+
+    select.innerHTML =
+        '<option value="">Selecione um cliente cadastrado</option>' +
+        clientes.map(function (cliente) {
+
+            return `
+                <option value="${cliente.id}">
+                    ${escapar(cliente.nome)} (${escapar(cliente.email)})
+                </option>
+            `;
+
+        }).join("");
+
+    const aindaExiste = clientes.some(
+        cliente => String(cliente.id) === selecionadoAntes
+    );
+
+    if (aindaExiste) {
+
+        select.value = selecionadoAntes;
+
+    }
+
+    mostrarEmailCliente();
+
+}
+
+
+function clienteSelecionado() {
+
+    const select = campo("clienteFrete");
+
+    if (!select || !select.value) {
+
+        return null;
+
+    }
+
+    return clientes.find(
+        cliente => String(cliente.id) === select.value
+    ) || null;
+
+}
+
+
+function mostrarEmailCliente() {
+
+    const cliente = clienteSelecionado();
+
+    campo("emailCliente").innerText = cliente
+        ? "O orçamento será enviado para " + cliente.email
+        : "Nenhum cliente selecionado. O orçamento não será enviado por e-mail.";
+
+}
+
+
+/* =========================================================
+   CONFIGURAÇÕES DE E-MAIL
+   Autor: Pedro Ivanoff
+========================================================= */
+
+/* Propriedade da configuração -> id do campo no formulário.
+   O mesmo nome é usado como chave no localStorage. */
+const CAMPOS_EMAIL = {
+    remetente: "emailRemetente",
+    publicKey: "emailjsPublicKey",
+    serviceId: "emailjsServiceId",
+    templateId: "emailjsTemplateId"
+};
+
+const CAMPO_ENVIO_AUTOMATICO = "envioAutomatico";
+
+
+function configuracoesEmail() {
+
+    const config = {
+        automatico:
+            localStorage.getItem(CAMPO_ENVIO_AUTOMATICO) !== "nao"
+    };
+
+    Object.entries(CAMPOS_EMAIL).forEach(function ([propriedade, id]) {
+
+        config[propriedade] = localStorage.getItem(id) || "";
+
+    });
+
+    return config;
+
+}
+
+
+function salvarConfiguracoesEmail(silencioso) {
+
+    const remetente = valorDoCampo(CAMPOS_EMAIL.remetente);
+
+    if (remetente && !emailValido(remetente)) {
+
+        alert("Informe um e-mail válido para a empresa.");
+        return false;
+
+    }
+
+    localStorage.setItem(
+        CAMPO_ENVIO_AUTOMATICO,
+        campo(CAMPO_ENVIO_AUTOMATICO).checked ? "sim" : "nao"
+    );
+
+    Object.entries(CAMPOS_EMAIL).forEach(function ([, id]) {
+
+        localStorage.setItem(id, valorDoCampo(id));
+
+    });
+
+    if (!silencioso) {
+
+        alert("Configurações de e-mail salvas!");
+
+    }
+
+    return true;
+
+}
+
+
+function carregarConfiguracoesEmail() {
+
+    const config = configuracoesEmail();
+
+    campo(CAMPO_ENVIO_AUTOMATICO).checked = config.automatico;
+
+    Object.entries(CAMPOS_EMAIL).forEach(function ([propriedade, id]) {
+
+        campo(id).value = config[propriedade];
+
+    });
+
+}
+
+
+/* =========================================================
+   MENSAGEM DO ORÇAMENTO
+   Autor: Pedro Ivanoff
+========================================================= */
+
+const VALIDADE_ORCAMENTO_DIAS = 7;
+
+
+function nomeDoSistema() {
+
+    return localStorage.getItem("nomeSistema") || "FreteFácil";
+
+}
+
+
+function assuntoOrcamento(orcamento) {
+
+    return (
+        "Orçamento de frete " +
+        orcamento.origem +
+        " → " +
+        orcamento.destino
+    );
+
+}
+
+
+function montarMensagemOrcamento(orcamento) {
+
+    const remetente = configuracoesEmail().remetente;
+
+    const linhas = [
+        "Olá, " + orcamento.clienteNome + "!",
+        "",
+        "Segue o orçamento de frete solicitado:",
+        "",
+        "Número do orçamento: " + orcamento.id,
+        "Data: " + orcamento.data,
+        "Origem: " + orcamento.origem,
+        "Destino: " + orcamento.destino,
+        "Distância: " + distanciaEscrita(orcamento.distancia),
+        "Veículo: " + (orcamento.veiculo || "não informado"),
+        "Tipo de entrega: " + (orcamento.urgencia || "normal"),
+        "Peso da carga: " + pesoEscrito(orcamento.peso),
+        "",
+        "VALOR TOTAL: " + dinheiro(orcamento.valor),
+        "",
+        "Orçamento válido por " + VALIDADE_ORCAMENTO_DIAS + " dias.",
+        "",
+        "Atenciosamente,",
+        nomeDoSistema()
+    ];
+
+    if (remetente) {
+
+        linhas.push(remetente);
+
+    }
+
+    return linhas.join("\n");
+
+}
+
+
+function distanciaEscrita(distancia) {
+
+    return distancia
+        ? distancia.toFixed(0) + " km"
+        : "não informada";
+
+}
+
+
+function pesoEscrito(peso) {
+
+    return peso
+        ? peso + " kg"
+        : "não informado";
+
+}
+
+
+/* Um mesmo valor é enviado com vários nomes porque cada template
+   do EmailJS pode usar um deles no campo "To Email". */
+function parametrosEmail(destino, nome, assunto, mensagem, resposta) {
+
+    return {
+        to_email: destino,
+        email: destino,
+        user_email: destino,
+        recipient: destino,
+
+        to_name: nome,
+        user_name: nome,
+        name: nome,
+
+        reply_to: resposta || destino,
+        from_name: nomeDoSistema(),
+
+        subject: assunto,
+        title: assunto,
+
+        message: mensagem,
+        content: mensagem
+    };
+
+}
+
+
+/* =========================================================
+   ENVIO DO ORÇAMENTO POR E-MAIL
+   Autor: Pedro Ivanoff
+========================================================= */
+
+const SITUACAO_ENVIADO = "Enviado";
+const SITUACAO_PROGRAMA_EMAIL = "Aberto no programa de e-mail";
+
+
+async function enviarEmailOrcamento(orcamento, manual) {
+
+    if (!orcamento.clienteEmail) {
+
+        if (manual) {
+
+            alert(
+                "Este orçamento não possui cliente com e-mail.\n\n" +
+                "Selecione um cliente na tela de cálculo antes de gerar o orçamento."
+            );
+
+        }
+
+        return false;
+
+    }
+
+    const config = configuracoesEmail();
+    const assunto = assuntoOrcamento(orcamento);
+    const mensagem = montarMensagemOrcamento(orcamento);
+
+    const problema = problemaNaConfiguracao(config);
+
+    if (problema) {
+
+        if (manual) {
+
+            alert(
+                "Envio automático indisponível.\n\n" +
+                problema +
+                "\n\nO programa de e-mail será aberto com a mensagem pronta."
+            );
+
+        }
+
+        usarProgramaEmail(orcamento, assunto, mensagem);
+
+        return true;
+
+    }
+
+    try {
+
+        await emailjs.send(
+            config.serviceId,
+            config.templateId,
+            parametrosEmail(
+                orcamento.clienteEmail,
+                orcamento.clienteNome,
+                assunto,
+                mensagem,
+                config.remetente
+            ),
+            { publicKey: config.publicKey }
+        );
+
+        marcarOrcamentoEnviado(orcamento.id, SITUACAO_ENVIADO);
+
+        if (manual) {
+
+            alert("Orçamento enviado para " + orcamento.clienteEmail);
+
+        }
+
+        return true;
+
+    } catch (erro) {
+
+        console.error("Falha no envio pelo EmailJS:", erro);
+
+        alert(
+            "Não foi possível enviar o e-mail.\n\n" +
+            explicarErroEmail(erro) +
+            "\n\nO programa de e-mail será aberto com a mensagem pronta."
+        );
+
+        usarProgramaEmail(orcamento, assunto, mensagem);
+
+        return false;
+
+    }
+
+}
+
+
+function usarProgramaEmail(orcamento, assunto, mensagem) {
+
+    abrirProgramaEmail(orcamento.clienteEmail, assunto, mensagem);
+
+    marcarOrcamentoEnviado(orcamento.id, SITUACAO_PROGRAMA_EMAIL);
+
+}
+
+
+function abrirProgramaEmail(destinatario, assunto, mensagem) {
+
+    window.location.href =
+        "mailto:" + encodeURIComponent(destinatario) +
+        "?subject=" + encodeURIComponent(assunto) +
+        "&body=" + encodeURIComponent(mensagem);
+
+}
+
+
+function marcarOrcamentoEnviado(id, situacao) {
+
+    const orcamento = orcamentos.find(
+        item => item.id === id
+    );
+
+    if (!orcamento) {
+
+        return;
+
+    }
+
+    orcamento.emailEnviado = situacao;
+
+    orcamento.status = "Enviado ao cliente";
+
+    localStorage.setItem(
+        "orcamentosFretes",
+        JSON.stringify(orcamentos)
+    );
+
+    carregarOrcamentos();
+
+}
+
+
+function reenviarOrcamento(id) {
+
+    const orcamento = orcamentos.find(
+        item => item.id === id
+    );
+
+    if (orcamento) {
+
+        enviarEmailOrcamento(orcamento, true);
+
+    }
+
+}
+
+
+/* =========================================================
+   DIAGNÓSTICO DO ENVIO
+   Autor: Pedro Ivanoff
+========================================================= */
+
+/* Verificações feitas antes de chamar o EmailJS.
+   A primeira que falhar explica por que o envio não é possível. */
+const VERIFICACOES_ENVIO = [
+    {
+        falhou: config =>
+            !config.publicKey || !config.serviceId || !config.templateId,
+        motivo: () =>
+            "Preencha a Public Key, o Service ID e o Template ID em Configurações."
+    },
+    {
+        falhou: () => typeof emailjs === "undefined",
+        motivo: () =>
+            "A biblioteca do EmailJS não foi carregada. Verifique a conexão com a internet ou se algum bloqueador está ativo."
+    },
+    {
+        falhou: () => location.protocol === "file:",
+        motivo: () =>
+            "A página está aberta como arquivo local (file://). O EmailJS exige um endereço http. Use o Live Server do VS Code ou rode: python -m http.server"
+    },
+    {
+        falhou: config => !/^service_/.test(config.serviceId),
+        motivo: config =>
+            "O Service ID deve começar com service_ e o valor informado foi \"" +
+            config.serviceId +
+            "\".\n\nConfira se ele não foi colado no campo errado."
+    },
+    {
+        falhou: config => !/^template_/.test(config.templateId),
+        motivo: config =>
+            "O Template ID deve começar com template_ e o valor informado foi \"" +
+            config.templateId +
+            "\".\n\nConfira se ele não foi colado no campo errado."
+    },
+    {
+        falhou: config => /^(service|template)_/.test(config.publicKey),
+        motivo: config =>
+            "O campo Public Key está com \"" +
+            config.publicKey +
+            "\", que é um ID de serviço ou template.\n\nA Public Key fica em Account > General no painel do EmailJS."
+    }
+];
+
+
+function problemaNaConfiguracao(config) {
+
+    const verificacao = VERIFICACOES_ENVIO.find(
+        item => item.falhou(config)
+    );
+
+    return verificacao
+        ? verificacao.motivo(config)
+        : null;
+
+}
+
+
+/* A causa vem do texto da resposta, não do código HTTP:
+   o EmailJS usa 400 para vários problemas diferentes. */
+const DIAGNOSTICOS_EMAIL = [
+    {
+        padrao: /recipient|to.?email|address is empty/i,
+        causa:
+            "O EmailJS recebeu o pedido sem destinatário.\n\n" +
+            "Abra o template no painel, aba Settings, e confirme que o campo \"To Email\" contém exatamente {{to_email}} (sem espaços dentro das chaves). Depois clique em Save.\n\n" +
+            "Confira também se o Template ID salvo aqui é o mesmo template que você editou."
+    },
+    {
+        padrao: /dynamic variable|corrupted/i,
+        causa:
+            "O template usa uma variável que não está sendo enviada.\n\n" +
+            "Use apenas estas no template: {{to_email}}, {{to_name}}, {{reply_to}}, {{subject}} e {{message}}."
+    },
+    {
+        padrao: /account not found/i,
+        causa:
+            "A Public Key não corresponde a nenhuma conta.\n\n" +
+            "Copie novamente em Account > General. Se você tiver mais de uma conta ou equipe no EmailJS, use a da conta onde o serviço e o template foram criados."
+    },
+    {
+        padrao: /public key|user.?id|invalid.*key/i,
+        causa:
+            "Public Key recusada.\n\n" +
+            "Copie novamente em Account > General no painel do EmailJS."
+    },
+    {
+        padrao: /origin|cors|not allowed|blocked/i,
+        causa: () =>
+            "O endereço desta página não está autorizado.\n\n" +
+            "No painel, em Account > Security, adicione " +
+            location.origin +
+            " à lista de origens permitidas — ou desative a restrição."
+    },
+    {
+        padrao: /service/i,
+        causa:
+            "Service ID não encontrado.\n\n" +
+            "No painel, abra Email Services: o código do serviço aparece na coluna Service ID e começa com service_.\n\n" +
+            "Confirme também que o serviço está conectado (status Connected)."
+    },
+    {
+        padrao: /template/i,
+        causa:
+            "Template ID não encontrado.\n\n" +
+            "No painel, abra Email Templates: o código começa com template_ e aparece na lista e na aba Settings do template.\n\n" +
+            "Se você acabou de criar o template, confirme que clicou em Save."
+    },
+    {
+        padrao: /insufficient|quota|limit|too many/i,
+        causa: "Limite de envios do plano atingido."
+    },
+    {
+        padrao: /grant|auth|smtp|gmail|outlook/i,
+        causa:
+            "O EmailJS não conseguiu acessar a conta de e-mail conectada.\n\n" +
+            "Abra Email Services no painel e reconecte o serviço."
+    }
+];
+
+/* Usados quando o texto da resposta não identifica a causa. */
+const DIAGNOSTICOS_POR_STATUS = {
+    404:
+        "Service ID ou Template ID não encontrado.\n\n" +
+        "Confira os dois códigos no painel do EmailJS e veja se cada um foi colado no campo certo.",
+    412:
+        "O EmailJS não conseguiu acessar a conta de e-mail conectada.\n\n" +
+        "Abra Email Services no painel e reconecte o serviço.",
+    418: "Limite de envios do plano atingido.",
+    429: "Limite de envios do plano atingido.",
+    401:
+        "Acesso recusado pelo EmailJS.\n\n" +
+        "Verifique a Public Key e a lista de origens permitidas em Account > Security.",
+    403:
+        "Acesso recusado pelo EmailJS.\n\n" +
+        "Verifique a Public Key e a lista de origens permitidas em Account > Security."
+};
+
+
+function explicarErroEmail(erro) {
+
+    const status = erro && erro.status;
+
+    const texto = String(
+        (erro && (erro.text || erro.message)) || erro
+    );
+
+    const detalhe =
+        "Resposta do EmailJS: " +
+        (status ? status + " - " : "") +
+        texto;
+
+    const diagnostico = DIAGNOSTICOS_EMAIL.find(
+        item => item.padrao.test(texto)
+    );
+
+    const causa = diagnostico
+        ? diagnostico.causa
+        : DIAGNOSTICOS_POR_STATUS[status];
+
+    if (!causa) {
+
+        return detalhe;
+
+    }
+
+    return (
+        (typeof causa === "function" ? causa() : causa) +
+        "\n\n" +
+        detalhe
+    );
+
+}
+
+
+/* =========================================================
+   TESTE DE ENVIO
+   Autor: Pedro Ivanoff
+========================================================= */
+
+async function enviarEmailTeste() {
+
+    const destino = valorDoCampo(CAMPOS_EMAIL.remetente);
+
+    if (!emailValido(destino)) {
+
+        alert(
+            "Preencha o campo \"E-mail da empresa\" com um endereço válido.\n\n" +
+            "O teste será enviado para ele."
+        );
+
+        return;
+
+    }
+
+    if (
+        !confirm(
+            "Um e-mail de teste será enviado para:\n\n" +
+            destino +
+            "\n\nDeseja continuar?"
+        )
+    ) {
+
+        return;
+
+    }
+
+    salvarConfiguracoesEmail(true);
+
+    const config = configuracoesEmail();
+
+    const problema = problemaNaConfiguracao(config);
+
+    if (problema) {
+
+        alert("Não é possível testar o envio.\n\n" + problema);
+        return;
+
+    }
+
+    try {
+
+        await emailjs.send(
+            config.serviceId,
+            config.templateId,
+            parametrosEmail(
+                destino,
+                "Equipe " + nomeDoSistema(),
+                "Teste de envio - FreteFácil",
+                "Este é um e-mail de teste do sistema FreteFácil.\n\n" +
+                "Se você recebeu esta mensagem, o envio de orçamentos está configurado corretamente.",
+                destino
+            ),
+            { publicKey: config.publicKey }
+        );
+
+        alert(
+            "Teste enviado para " + destino +
+            "\n\nVerifique a caixa de entrada e o spam."
+        );
+
+    } catch (erro) {
+
+        console.error("Falha no teste de envio:", erro);
+
+        console.log(
+            "Variáveis enviadas ao template:",
+            Object.keys(
+                parametrosEmail(destino, "", "", "", destino)
+            ).join(", ")
+        );
+
+        alert("O teste falhou.\n\n" + explicarErroEmail(erro));
+
+    }
+
+}
 
 
 /* =========================================================
@@ -1552,6 +2615,10 @@ function carregarHistorico() {
                             📍 ${item.distancia.toFixed(0)} km
                         </span>
 
+                        <span>
+                            👤 ${escapar(item.clienteNome) || "Sem cliente"}
+                        </span>
+
                     </div>
 
                 </div>
@@ -1622,13 +2689,19 @@ function carregarOrcamentos() {
                     <div class="item-info">
 
                         <strong>
-                            📄 ${item.origem}
-                            → ${item.destino}
+                            📄 ${escapar(item.origem)}
+                            → ${escapar(item.destino)}
                         </strong>
 
                         <span>
                             Criado em ${item.data}
-                            • Status: ${item.status}
+                            • Status: ${escapar(item.status)}
+                        </span>
+
+                        <span>
+                            👤 ${escapar(item.clienteNome) || "Sem cliente"}
+                            • ✉️ ${escapar(item.clienteEmail) || "Sem e-mail"}
+                            • ${escapar(item.emailEnviado) || "Não enviado"}
                         </span>
 
                     </div>
@@ -1638,6 +2711,14 @@ function carregarOrcamentos() {
                         <strong class="preco">
                             ${dinheiro(item.valor)}
                         </strong>
+
+                        <button
+                            class="btn-secundario"
+                            onclick="reenviarOrcamento(${item.id})"
+                            ${item.clienteEmail ? "" : "disabled"}
+                        >
+                            ✉️ Enviar
+                        </button>
 
                         <button
                             class="btn-excluir"
@@ -1793,7 +2874,7 @@ function apagarDados() {
 
     if (
         !confirm(
-            "ATENÇÃO!\n\nIsso vai apagar histórico, orçamentos, transportadoras, veículos e entregas.\n\nDeseja continuar?"
+            "ATENÇÃO!\n\nIsso vai apagar histórico, orçamentos, clientes, transportadoras, veículos e entregas.\n\nDeseja continuar?"
         )
     ) {
 
@@ -1815,11 +2896,19 @@ function apagarDados() {
 
     entregas = [];
 
+    clientes = [];
+
+
+    cancelarEdicaoCliente();
+
 
     carregarListas();
 
 
     carregarConfiguracoes();
+
+
+    carregarConfiguracoesEmail();
 
 
     alert(
@@ -1883,6 +2972,8 @@ function selecionar(nome) {
 ========================================================= */
 
 function carregarListas() {
+
+    carregarClientes();
 
     carregarHistorico();
 

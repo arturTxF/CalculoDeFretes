@@ -291,6 +291,25 @@ body {
 }
 
 
+/* =========================================================
+   CLIENTE NO FRETE
+   Autor: Pedro Ivanoff
+========================================================= */
+
+.campo-cliente {
+    margin-bottom: 18px;
+}
+
+.campo-cliente small {
+
+    margin-top: 7px;
+
+    color: #78837d;
+
+    font-size: 12px;
+}
+
+
 /* ================= CHECKBOX ================= */
 
 .opcoes {
@@ -385,6 +404,36 @@ body {
     background: #078d4b;
 
     color: white;
+}
+
+/* =========================================================
+   BOTÕES DO CADASTRO DE CLIENTES E DO ENVIO DE E-MAIL
+   Autor: Pedro Ivanoff
+========================================================= */
+
+.btn-cancelar-edicao {
+
+    width: 100%;
+
+    height: 44px;
+
+    margin-top: 10px;
+}
+
+.btn-secundario:disabled {
+
+    border-color: #d2dad5;
+
+    color: #a4aea8;
+
+    cursor: not-allowed;
+}
+
+.btn-secundario:disabled:hover {
+
+    background: white;
+
+    color: #a4aea8;
 }
 
 .btn-perigo {
@@ -816,6 +865,19 @@ body {
 
 .configuracao:last-of-type {
     border-bottom: none;
+}
+
+/* Chave de envio automático de orçamentos - Autor: Pedro Ivanoff */
+
+.configuracao input.config-check {
+
+    width: 22px;
+
+    height: 22px;
+
+    justify-self: start;
+
+    accent-color: #078d4b;
 }
 
 .configuracao strong {

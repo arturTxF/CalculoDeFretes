@@ -46,6 +46,10 @@
                 📄 <span>Orçamentos</span>
             </a>
 
+            <a href="#" class="menu-item" data-tela="clientes">
+                👤 <span>Clientes</span>
+            </a>
+
             <a href="#" class="menu-item" data-tela="transportadoras">
                 🚛 <span>Transportadoras</span>
             </a>
@@ -115,6 +119,29 @@
                     </div>
 
                     <div class="card-body">
+
+                        <!-- Cliente que receberá o orçamento
+                             Autor: Pedro Ivanoff -->
+
+                        <div class="campo campo-cliente">
+
+                            <label>Cliente</label>
+
+                            <select id="clienteFrete">
+
+                                <option value="">
+                                    Selecione um cliente cadastrado
+                                </option>
+
+                            </select>
+
+                            <small id="emailCliente">
+                                Nenhum cliente selecionado.
+                                O orçamento não será enviado por e-mail.
+                            </small>
+
+                        </div>
+
 
                         <div class="rota">
 
@@ -570,6 +597,152 @@
 
 
         <!-- =====================================================
+             CLIENTES
+             Autor: Pedro Ivanoff
+        ====================================================== -->
+
+        <section class="tela" id="tela-clientes">
+
+            <div class="titulo">
+
+                <h2>Clientes</h2>
+
+                <p>
+                    Cadastre os clientes que receberão os orçamentos por e-mail.
+                </p>
+
+            </div>
+
+
+            <div class="card">
+
+                <div class="card-header">
+                    👤 Novo cliente
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="form-grid">
+
+                        <div class="campo">
+
+                            <label>Nome do cliente *</label>
+
+                            <input
+                                type="text"
+                                id="nomeCliente"
+                                placeholder="Ex.: Logistica Ltda."
+                            >
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>E-mail *</label>
+
+                            <input
+                                type="email"
+                                id="emailClienteCadastro"
+                                placeholder="cliente@empresa.com.br"
+                            >
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>Telefone</label>
+
+                            <input
+                                type="text"
+                                id="telefoneCliente"
+                                placeholder="(11) 99999-9999"
+                            >
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>CNPJ / CPF</label>
+
+                            <input
+                                type="text"
+                                id="documentoCliente"
+                                placeholder="00.000.000/0001-00"
+                            >
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>Cidade</label>
+
+                            <input
+                                type="text"
+                                id="cidadeCliente"
+                                placeholder="São Paulo - SP"
+                            >
+
+                        </div>
+
+
+                        <div class="campo">
+
+                            <label>Contato responsável</label>
+
+                            <input
+                                type="text"
+                                id="contatoCliente"
+                                placeholder="Nome do responsável"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="btn-calcular"
+                        onclick="salvarCliente()"
+                        id="btnSalvarCliente"
+                    >
+                        ➕ CADASTRAR CLIENTE
+                    </button>
+
+
+                    <button
+                        class="btn-secundario btn-cancelar-edicao"
+                        onclick="cancelarEdicaoCliente()"
+                        id="btnCancelarCliente"
+                        hidden
+                    >
+                        Cancelar edição
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="card lista-card">
+
+                <div class="card-header">
+                    Clientes cadastrados
+                </div>
+
+                <div id="listaClientes"></div>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================================
              TRANSPORTADORAS
         ====================================================== -->
 
@@ -970,6 +1143,131 @@
             </div>
 
 
+            <!-- =====================================================
+                 ENVIO DE ORÇAMENTOS POR E-MAIL
+                 Autor: Pedro Ivanoff
+            ====================================================== -->
+
+            <div class="card">
+
+                <div class="card-header">
+                    ✉️ Envio de orçamentos por e-mail
+                </div>
+
+
+                <div class="card-body">
+
+                    <div class="configuracao">
+
+                        <div>
+                            <strong>Enviar orçamento automaticamente</strong>
+                            <span>
+                                Ao calcular o frete com um cliente selecionado,
+                                o orçamento é enviado para o e-mail dele.
+                            </span>
+                        </div>
+
+                        <input
+                            type="checkbox"
+                            id="envioAutomatico"
+                            class="config-check"
+                            checked
+                        >
+
+                    </div>
+
+
+                    <div class="configuracao">
+
+                        <div>
+                            <strong>E-mail da empresa</strong>
+                            <span>Aparece como remetente/resposta do orçamento.</span>
+                        </div>
+
+                        <input
+                            type="email"
+                            id="emailRemetente"
+                            placeholder="contato@fretefacil.com"
+                        >
+
+                    </div>
+
+
+                    <div class="configuracao">
+
+                        <div>
+                            <strong>EmailJS - Public Key</strong>
+                            <span>
+                                Sem as três chaves abaixo o sistema abre o
+                                programa de e-mail do computador com a mensagem
+                                pronta.
+                            </span>
+                        </div>
+
+                        <input
+                            type="text"
+                            id="emailjsPublicKey"
+                            placeholder="Ex.: aBcD1234efGh"
+                        >
+
+                    </div>
+
+
+                    <div class="configuracao">
+
+                        <div>
+                            <strong>EmailJS - Service ID</strong>
+                            <span>Identificador do serviço de e-mail.</span>
+                        </div>
+
+                        <input
+                            type="text"
+                            id="emailjsServiceId"
+                            placeholder="service_xxxxxxx"
+                        >
+
+                    </div>
+
+
+                    <div class="configuracao">
+
+                        <div>
+                            <strong>EmailJS - Template ID</strong>
+                            <span>
+                                O template deve receber as variáveis:
+                                to_email, to_name, subject e message.
+                            </span>
+                        </div>
+
+                        <input
+                            type="text"
+                            id="emailjsTemplateId"
+                            placeholder="template_xxxxxxx"
+                        >
+
+                    </div>
+
+
+                    <button
+                        class="btn-calcular"
+                        onclick="salvarConfiguracoesEmail()"
+                    >
+                        💾 SALVAR CONFIGURAÇÕES DE E-MAIL
+                    </button>
+
+
+                    <button
+                        class="btn-secundario btn-cancelar-edicao"
+                        onclick="enviarEmailTeste()"
+                    >
+                        ✉️ ENVIAR E-MAIL DE TESTE
+                    </button>
+
+                </div>
+
+            </div>
+
+
             <div class="card aviso-config">
 
                 <div class="card-header">
@@ -1006,6 +1304,8 @@
 
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <script src="script.js"></script>
 
